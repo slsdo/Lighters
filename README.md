@@ -22,6 +22,9 @@ Features
 History
 -------
 
+Version 1.1.1 - 2013/12/29
+- Updated to work with Processing 2
+
 Version 1.1 - 2013/03/10
 - Removed the sound effect for steps since it sounds awful...
 

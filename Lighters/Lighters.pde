@@ -1,7 +1,8 @@
 /* Lighters
    - by Future Data Lab | www.futuredatalab.com
 */
-   
+
+import java.util.Collections;
 import ddf.minim.*;
 import ddf.minim.signals.*;
 import ddf.minim.analysis.*;
@@ -88,6 +89,7 @@ void setup() {
     frame.setIconImage(icon.getImage());
   }
   size(400, 300);
+  noSmooth();
   initLighters();
 }
 
