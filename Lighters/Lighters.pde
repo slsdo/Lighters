@@ -1,5 +1,7 @@
 /* Lighters
-   - by Future Data Lab | www.futuredatalab.com
+   http://www.futuredatalab.com/lighters/
+   
+   Compatible with Processing 2.2.1
 */
 
 import java.util.Collections;
