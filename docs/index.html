@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Lighters | slsdo</title>
+
+    <meta name="description" content="Lighters" />
+    <meta name="keywords" content="Lighters" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="header"></div>
+
+        <div id="main">
+            <h1>Lighters</h1>
+
+            <div class="menu center">
+                <a href="https://slsdo.github.io/lighters/">Home</a> | <a href="#intro">Introduction</a> | <a href="#download">Downloads | <a href="https://github.com/slsdo/lighters">Code</a></a>
+            </div>
+
+            <div class="sub center">This one's for you and me, living out our dreams<br />We're all right where we should be<br />Lift my arms out wide, I open my eyes<br />And now all I wanna see, Is a sky full of lighters<br />A sky full of lighters</div>
+
+            <div class="separator"></div>
+
+            <h2 id="intro">Introduction</h2>
+
+            <p>Inspired by <a href="https://www.youtube.com/watch?v=YWt4wmZ_EMI">this song</a>, starry night skies, and a passion for creative coding, Lighters is an interactive coding experiment that resulted in a small game.</p>
+
+            <p>The game is created using <a href="http://processing.org/">Processing</a>. The following sections goes over the techniques and algorithms used in the project. If you just want to see the finished work, either scroll to the bottom or follow <a href="online/index.html">this link</a>.</p>
+
+            <p>Each section also comes with links to useful websites and resources in case you would like to explore more of a specific topic.</p>
+
+            <div class="separator"></div>
+
+            <h2>Procedural Map Generation</h2>
+
+            <p>Early experiments with procedural content generation lead to a separate <a href="https://slsdo.github.io/procedural-dungeon/">Procedural Dungeon Generator</a>, check the link for detailed description of different ways to create dungeon layouts.</p>
+
+            <div class="center"><img src="img/dungeon_basic.png" alt="dungeon_basic" /></div>
+
+            <p>This program uses the Random Room algorithm, which gave us rooms with a good mix of size and shape that are connected by corridors. The Random Room algorithm in a nutshell is as follows:</p>
+
+            <ul>
+                <li>Create rooms of random width and height</li>
+                <li>Randomly place them on the grid (overlap is ignored so we get more complex room layouts)</li>
+                <li>Use A* Pathfinding to dig out corridors that connect the rooms</li>
+                <li>Randomly dig out a few more corridors that either end up as dead ends or connect to another rooms</li>
+            </ul>
+
+            <p>A few changes had to be made when integrating the algorithm into Lighters. The first was to not allow corridors to be placed at the edge of the grid. In the original algorithm, rooms have walls while corridors do not. As a result, corridors on the edge did not get a wall sprite when rendered. This can be fixed by changing the corridor generation algorithm to create walls for corridors, however, in the interest of time, the no-corridor-on-edge shortcut is taken.</p>
+
+            <p>Due to the above shortcut, a new problem surfaced: since corridors no longer appear at the edge, sometimes we get disconnected rooms if a room is placed by the edge. A flood-fill algorithm was added to check for disconnected rooms. When a new map is generated, the flood-fill algorithm picks and tags a random floor tile, then recursively tag its neighbors until all neighbors are tagged. All floor tiles should be tagged if all rooms are connected, so if any floor tile remains unmarked, a new map is generated. Since the likelihood of having disconnected rooms is quite low, a good map is almost always generated on the second try.</p>
+
+            <h3>Optimization</h3>
+
+            <p>The original dungeon generation algorithm used a 2D array to store grid information. In Lighters, the 2D array is replaced by an 1D array.</p>
+
+            <table>
+                <tr class="header">
+                    <td colspan="2">Access data: 2D array versus 1D array</td>
+                </tr>
+                <tr>
+                    <td><strong>2D</strong></td>
+                    <td>number = array[x][y];</td>
+
+                </tr>
+                <tr>
+                    <td><strong>1D</strong></td>
+                    <td>number = array[x + y*width];</td>
+                </tr>
+            </table>
+
+            <p>While on a technical level the cost of accessing data in a 2D array versus 1D array is the same, a 1D array *could* be more useful <a href="http://www.parashift.com/c++-faq-lite/freestore-mgmt.html#faq-16.16">if you're trying to make a sized-at-runtime, multi-dimensional, but still rectangular array</a>. In the end a 2D array is easier to understand visually, so this is really more of a matter of preference than serious optimization.</p>
+
+            <h3>References</h3>
+
+            <ul>
+                <li><a href="http://pcg.wikidot.com/pcg-algorithm:dungeon-generation">pcg.wikidot.com/pcg-algorithm:dungeon-generation</a></li>
+                <li><a href="http://donjon.bin.sh/dungeon/about/">donjon.bin.sh/dungeon/about/</a></li>
+                <li><a href="http://www.policyalmanac.org/games/aStarTutorial.htm">www.policyalmanac.org/games/aStarTutorial.htm</a></li>
+                <li><a href="http://www.roguebasin.com/index.php?title=Roguelike_Dev_FAQ">www.roguebasin.com/index.php?title=Roguelike_Dev_FAQ</a></li>
+            </ul>
+
+            <div class="separator"></div>
+
+            <h2>Tile Map and Sprites</h2>
+
+            <p>Lighters is tile-based. After a map is generated, its features are stored in a grid, with each grid cell either marked as a floor tile, a wall tile, a candle, etc. A tile-based world simplifies keeping track of where everything is, and collision detection becomes much easier since collisions can be managed through simple Axis-Aligned Bounding Box (AABB).</p>
+
+            <div class="center"><img src="img/sprite_map.png" alt="sprite_map" /></div>
+
+            <p>After map generation, we go through each grid cell and renders it with a sprite based on its tile content (made easy thanks to the use of tile map). The map sprite sheet consists of several different floor tiles and wall tiles for different wall orientations.</p>
+
+            <div class="center"><img src="img/sprite_tilemap.png" alt="sprite_tilemap" /></div>
+
+            <p>Each floor tile receives a random floor sprite. As for wall tiles, 1 (out of 20) wall sprite is used based on the position and number of the tile's neighbors. In the sprite sheet above, the four wall tiles with pink background represent corners with transparent background (pink pixels become invisible when the sprite is rendered).</p>
+
+            <p>The agent sprites are stored in an array of images. When the agent is walking, the images are displayed in sequence based on framerate to create animation. For example, if there are four frames, we use <em>imageArray[frameCount%4]</em> to access each frame. The modulo operator calculates the remainder when one number is divided by another, so at frame 0, 4, 8... (multiples of 4), we render the sprite stored at <em>imageArray[0]</em>, frame 3, 6, 9, and other multiples of 3 gives us the sprite at <em>imageArray[3]</em>, and so on.</p>
+
+            <div class="center"><img src="img/sprite_agent.png" alt="sprite_agent" /></div>
+
+            <p>Big thanks to <a href="http://www.saltgames.com/">Salt Game</a> for providing the base sprites for the floor and wall tiles.</p>
+
+            <h3>Optimization</h3>
+
+            <p>Since the map is static, a simple optimization is to generate and cache the tile map during initialization. When the player moves, we simply display the cached image of the map, the viewport simply moves in response to the player's current location.</p>
+
+            <div class="center"><img src="img/sprite_viewport.png" alt="sprite_viewport" /></div>
+
+            <h3>References</h3>
+
+            <ul>
+                <li><a href="http://processing.andre-michelle.com/tilemap/">processing.andre-michelle.com/tilemap/</a></li>
+                <li><a href="http://www.tonypa.pri.ee/tbw/">www.tonypa.pri.ee/tbw/</a></li>
+                <li><a href="http://oos.moxiecode.com/blog/index.php/tutorials/">oos.moxiecode.com/blog/tutorials/</a></li>
+                <li><a href="http://processing.org/learning/pixels/">processing.org/learning/pixels/</a></li>
+                <li><a href="http://processing.org/learning/topics/animatedsprite.html">processing.org/learning/topics/animatedsprite.html</a></li>
+            </ul>
+
+            <div class="separator"></div>
+
+            <h2>Collision Detection</h2>
+
+            <p>The orginal plan was use <a href="http://box2d.org/">Box2D</a> to handle collisions, but after a few hours of playing around with the library, it became apparent that Box2D was overkill, so a custom collision detection engine was implemented instead.</p>
+
+            <div class="center"><img src="img/collision_wall.png" alt="collision_wall" /></div>
+
+            <p>Since no fancy physics is needed here, a simple Axis-Aligned Bounding Box is attached to each wall tile and the agent. During gameplay, the engine checks the location of the agent bounding box against each of the wall bounding boxes using a rectangle-rectangle intersection algorithm, and determines whether a collision has occurred.</p>
+
+            <p>One area that required some extra attention is keeping track of the direction the agent is moving towards when a collision occurs. If there is a wall to the agent's right side, the agent cannot move in that direction, but should still be able to move up, down, or left.</p>
+
+            <div class="center"><img src="img/collision_agent.png" alt="collision_agent" /></div>
+
+            <h3>Optimization</h3>
+
+            <p>Several checks are implemented to terminate collision processing early to save time. One optimization that was not implemented (but would help in bigger maps) is to only check bounding boxes close to the agent instead of cycling through all bounding boxes each frame.</p>
+
+            <h3>References</h3>
+
+            <ul>
+                <li><a href="http://www.gamasutra.com/view/feature/3383/simple_intersection_tests_for_games.php">www.gamasutra.com/view/feature/3383/simple_intersection_tests_for_games.php</a></li>
+            </ul>
+
+            <div class="separator"></div>
+
+            <h2>Dynamic Lighting and Shadows</h2>
+
+            <p>Lighting and shadows are two of the most important aspects of Lighters, and also took the most time to implement. For lighting, a pre-determined number of light sources (in our case candles) are placed randomly on the map. Each light source has a light radius. When rendering the tile map, pixels around the light sources are checked, if a pixel is within the light radius, a lighter version of it is drawn instead. When all pixels are processed, those within the light radius appear brighter than those out of the light's range.</p>
+
+            <p>To create shadows, a few extra checks are performed when a pixel is processed: if the pixel is not a floor tile (we only render shadows that appear on the floor), or if there is an object between the light source and the current pixel, then we leave the pixel as is (do not render a lighter version of it). To determine if a pixel is blocked by an object, we create a shadow volume based on positions of the wall tiles and the agent, and use a point-in-polygon algorithm to determine if a pixel is inside of that shadow volume.</p>
+
+            <div class="center"><img src="img/light_shadow.png" alt="light_shadow" /></div>
+
+            <p>The idea to have dynamic shadow and much of the final implementation were inspired by <a href="http://forums.tigsource.com/index.php?topic=8803.0">this tutorial</a>. In the tutorial, shadows are drawn on top of lighted tiles. In Lighters, instead of drawing shadows, shaded pixels are simply not lit.</p>
+
+            <h3>Optimization</h3>
+
+            <p>A lot of optimization can be done here. Since the shadows are dynamic, the map needs to be checked constantly, if the map is large, the performance can take a big hit. Instead of iterating through all pixels at every iteration, only pixels within a specific range of the light source is checked, this cuts down the time spent on calculating lighting and shadows to the number of light sources and their light radius.</p>
+
+            <p>To take the above idea one step further, only light pixels within the view port are processed. This does not help if all light sources are within the viewing window. However, if only one or two light sources are within the viewport, this will save a lot of processing time.</p>
+
+            <p>Another point of interest is the shadow-casting edges of walls. As mentioned <a href="http://forums.tigsource.com/index.php?topic=8803.0">here</a>:</p>
+
+            <blockquote>
+            <div class="center"><img src="img/light_leftright.png" alt="light_leftright" /></div>
+
+            <p>[...] If you look carefully at the shadows in the demo you can see that only the lines that are facing away from the light actually influence the shape of the final shadow. This means that we're processing and drawing the shadows for many lines which we don't actually need to.</p>
+
+            <p>[...]</p>
+
+            <p>You might notice that it's the lines facing towards the lightsource that we don't need to draw shadows from. Using a little vector maths we can quite easily find which lines are facing the lightsource, and so which are worth drawing shadows for.</p>
+            </blockquote>
+
+            <p>By doing some simple vector math and making use of dot product, we can determine which side of the edge the light source is on, cutting down the number of shadows we need to keep track of by half!</p>
+
+            <h3>References</h3>
+
+            <ul>
+                <li><a href="http://forums.tigsource.com/index.php?topic=8803.0">forums.tigsource.com/index.php?topic=8803.0</a></li>
+                <li><a href="http://paulbourke.net/geometry/polygonmesh/">paulbourke.net/geometry/polygonmesh/</a></li>
+                <li><a href="http://processing.org/reference/blend_.html">processing.org/reference/blend_.html</a></li>
+            </ul>
+
+            <div class="separator"></div>
+
+            <h2>Light Companion</h2>
+
+            <div class="center"><img src="img/companion_light.png" alt="companion_light" /></div>
+
+            <p>The light companion has its own bounding box, so it casts its own shadows when it's near a light source. Also, when idle, the light companion wanders around the agent using Brownian motion, and an attraction rule is applied to make sure it does not wander too far. When the light companion lights up, it becomes a light source, complete with all the lighting rules mentioned previously.</p>
+
+            <p>A special "energy" variable is added to the light companion. When acting as a light source, the light companion's light radius becomes smaller as its energy slowly decreases, the energy refills over time when the light companion is not lit up. Each light source also has its own energy that decreases over time, and the light companion can seek out nearby light sources and replenish their energy. Each time a light source has been re-ignited, the rate at which its energy decreases goes up.</p>
+
+            <h3>Optimization</h3>
+
+            <p>The light companion checks for nearby light sources by calculating its current distance to nearby light sources, and then compares the distance to a maximum radial distance to determine whether the light source is in range. Because of this, the distance formula, which contains a costly square root function, is called very frame. By squaring both the distance formula and the maximum radial distance, the square root from the distance formula can be effectively cancelled out.</p>
+
+            <h3>References</h3>
+
+            <ul>
+                <li><a href="http://www.openprocessing.org/visuals/?visualID=6426">www.openprocessing.org/visuals/?visualID=6426</a></li>
+                <li><a href="http://www.red3d.com/cwr/boids/">www.red3d.com/cwr/boids/</a></li>
+            </ul>
+
+            <div class="separator"></div>
+
+            <h2>Miscellanea</h2>
+
+            <p>Overall this was a fun and educational little project. A lot of time were spent on creating the map generator, the tile map and sprite engine, the collision detection engine, and dynamic lighting and shadows. Special thanks to Salt Game for giving us permission to use their floor and wall sprites, Annabelle Kennedy whose work the agent graphic is based on, and finally the song <em>Lighters</em> for inspiration.</p>
+
+            <table>
+                <tr class="header">
+                    <td colspan="2">Inspiration and Special Thanks</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="http://www.youtube.com/watch?v=YWt4wmZ_EMI">Lighters</a></strong></td>
+                    <td>The song that started it all</td>
+
+                </tr>
+                <tr>
+                    <td><strong><a href="http://www.saltgames.com/2011/2d-shadow-effects/">Salt Game</a></strong></td>
+                    <td>The sprites and the 2D shadow tutorial</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="http://nanokostudio.deviantart.com/">Annabelle Kennedy</a></strong></td>
+                    <td>The original character sprites our sprite is based on</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="http://musictomake.com/blog/2011/07/04/piano-tutorial-how-to-play-lighters-by-bad-meets-evil-featuring-bruno-mars-free-download-music-sheets-midi-fl-studio-mp3-fl-studio-exported/">musictomake</a></strong></td>
+                    <td>Lighters MIDI</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="http://flashyprogramming.wordpress.com/2010/01/04/starry-night-2/">Shooting Star</a></strong></td>
+                    <td>Shooting star</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="http://www.openprocessing.org/visuals/?visualID=41149">Flashy Programming</a></strong></td>
+                    <td>Starry night</td>
+                </tr>
+            </table>
+
+            <div class="separator"></div>
+
+            <h2 id="download">Results</h2>
+
+            <div class="center"><strong><a href="etc/lighters_windows.zip">[ Windows ]</a> <a href="etc/lighters_macosx.zip">[ Mac ]</a> <a href="etc/lighters_linux.zip">[ Linux ]</a></strong></div>
+
+            <div class="center"><img src="img/lighters_online.png" alt="lighters_online" /></div>
+        </div>
+
+        <div id="footer">
+            <div id="copyright">&copy; 2011 slsdo</div>
+        </div>
+    </div>
+</body>
+</html>
